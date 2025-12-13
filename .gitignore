@@ -1,0 +1,5 @@
+.vscode/
+nfa
+build/
+CMakeLists.txt
+.gitignore
