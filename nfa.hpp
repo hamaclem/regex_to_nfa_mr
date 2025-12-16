@@ -16,7 +16,7 @@ struct Row {
 
 struct matchedVar {
     char var;
-    Row* row; 
+    const Row* row; 
 };
 
 enum class TransitionType {
@@ -72,21 +72,22 @@ struct NFA {
 
 NFA build_from_AST(Node* ast);
 
+struct Run {
+    int state;
+    std::vector<matchedVar> bindings;
+
+    Run(int state = 0);
+};
+
 struct Simulation {
     const NFA &nfa;
-
-    struct Run {
-        int state;
-        std::vector<matchedVar> bindings;
-
-        Run(int state = 0);
-    };
-
     std::vector<Run> currentRuns;
 
     Simulation(const NFA &nfa);
 
-    void epsilon_closure(std::vector<Run> &runs);
+    void consume_epsilons(Run &run);
+    Run fork_run(Run &run);
+    void epsilon_closure(std::vector<Run> &currentRuns);
     bool run(const std::vector<Row> &rows);
     void reset();
 };

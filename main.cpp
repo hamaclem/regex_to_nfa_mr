@@ -17,6 +17,9 @@ std::vector<Row> rows = {
     {9, "1/2/2018 6:10", "OTHER OFFENCE", 41.18, -87.56}
 };
 
+GuardFn wildcard = [] (const std::vector<matchedVar> &buffer, const Row &row) {
+    return true;
+};
 GuardFn guard_R = [] (const std::vector<matchedVar> &buffer, const Row &row) {
     return row.primary_type == "ROBBERY";
 };
@@ -26,7 +29,6 @@ GuardFn guard_B = [] (const std::vector<matchedVar> &buffer, const Row &row) {
 GuardFn guard_M = [] (const std::vector<matchedVar> &buffer, const Row &row) {
     return row.primary_type == "MOTOR VEHICLE THEFT";
 };
-
 
 int main() {
 

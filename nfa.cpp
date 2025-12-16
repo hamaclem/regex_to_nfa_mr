@@ -242,67 +242,86 @@ void NFA::print() const {
     }
 }
 
-Simulation::Run(int state = 0)
+Run::Run(int state)
     : state(state), bindings() {}
 
 Simulation::Simulation(const NFA &nfa)
     : nfa(nfa) {
-        currentRuns.emplace_back(nfa.start);
+        Run Run(nfa.start);
+        currentRuns.push_back(Run);
         epsilon_closure(currentRuns);
     }
 
-void Simulation::epsilon_closure(Run &startRun, std::vector<Runs> &currentRuns) {
-    std::queue<Runs> q;
-    q.push(startRun);
+void Simulation::consume_epsilons(Run &run) {
+    int id = run.state;
+    while (true) {
+        const State &state = nfa.states[id];
+        if (state.out1.type == TransitionType::EPSILON && state.out2.type == TransitionType::NONE) {
+            id = state.out1.to;
+        } else {
+            break;
+        }
+    }
+    run.state = id;
+}
 
+Run Simulation::fork_run(Run &run) {
+    Run forkedRun = run;
+
+    int id = run.state;
+    const State &state = nfa.states[id];
+
+    run.state = state.out1.to;
+    forkedRun.state = state.out2.to;
+    
+    consume_epsilons(run);
+    consume_epsilons(forkedRun);
+    
+    bool exists = false;
+    for (Run &r : currentRuns) {
+        if (r.state == forkedRun.state) {
+            // TODO: ADD CHECK FOR BUFFER
+
+            exists = true; 
+            break; 
+        }
+    }
+    if (!exists) {
+        currentRuns.push_back(forkedRun);
+    }
+
+    return forkedRun;
+}
+
+void Simulation::epsilon_closure(std::vector<Run> &currentRuns) {
+    std::queue<Run> q;
+
+    for (Run run : currentRuns) {
+        q.push(run);
+    }
+    
     while (!q.empty()) {
         Run run = q.front();
-        q.pop();
-
+        
         int id = run.state;
         const State &state = nfa.states[id];
 
-        if (state.out1.type == TransitionType::EPSILON) {
-            Run newRun = run;
-            newRun.state = state.out1.to;
-            
-            bool exists = false;
-            for (Run &run : currentRuns) {
-                if (run.state == newRun.state && run.bindings == newRun.bindings) {
-                    exists = true; 
-                    break; 
-                }
-            }
-            if (!exists) {
-                q.push(newRun);
-                currentRuns.push_back(newRun);
-            }
+        if (state.out1.type == TransitionType::VAR) {
+            q.pop();
+        } else if (state.out1.type == TransitionType::EPSILON && state.out2.type == TransitionType::NONE) {
+            consume_epsilons(run);
+        } if (state.out1.type == TransitionType::EPSILON && state.out2.type == TransitionType::EPSILON) {
+            Run forkedRun = fork_run(run); 
+            q.push(forkedRun);
         }
-
-        if (state.out2.type == TransitionType::EPSILON) {
-            Run newRun = run;
-            newRun.state = state.out2.to;
-            
-            bool exists = false;
-            for (Run &run : currentRuns) {
-                if (run.state == newRun.state && run.bindings == newRun.bindings) {
-                    exists = true; 
-                    break; 
-                }
-            }
-            if (!exists) {
-                q.push(newRun);
-                currentRuns.push_back(newRun);
-            }
-        }
-    }    
+    }
 }
 
 bool Simulation::run(const std::vector<Row> &rows) {
-    for (Row row : rows) {
+    for (const Row &row : rows) {
         std::vector<Run> nextRuns;
 
-        for (const Run run : currentRuns) {
+        for (Run run : currentRuns) {
             int id = run.state;
             const State &state = nfa.states[id];
 
@@ -311,38 +330,35 @@ bool Simulation::run(const std::vector<Row> &rows) {
                     run.state = state.out1.to;
 
                     matchedVar matchedVar;
-                    matchedVar.var = state.out1.var;;
-                    matchedVar.row = row; 
-                    bindings.push_back(matchedVar);
+                    matchedVar.var = state.out1.var;
+                    matchedVar.row = &row; 
+                    run.bindings.push_back(matchedVar);
 
-                    epsilon_closure(run, currentRuns);
-                }
-            } else if (state.out2.type == TransitionType::VAR) {
-                if (state.out1.guard(run.bindings, row)) {
-                    run.state = state.out1.to;
+                    nextRuns.push_back(run); 
+                } 
+            } 
 
-                    matchedVar matchedVar;
-                    matchedVar.var = state.out2.var;;
-                    matchedVar.row = row; 
-                    bindings.push_back(matchedVar);
-
-                    epsilon_closure(run, currentRuns);
-                }
-            } else {
-                epsilon_closure(run, currentRuns);
-                currentRuns = nextRuns;
-            }
+            epsilon_closure(nextRuns);
+            currentRuns = std::move(nextRuns);
         }
     }
 
-    return currentStates.count(nfa.accept);
+    bool match = false;
+    for (const Run &run : currentRuns) {
+        if (run.state == nfa.accept) {
+            for (const matchedVar &matchedVar : run.bindings) {
+                std::cout << matchedVar.var << " , Row ID " << matchedVar.row->id << "\n";
+            }
+            match = true;
+        }
+    }
+    return match;
 }
 
 void Simulation::reset() {
     currentRuns.clear();
     Run startRun;
     startRun.state = nfa.start;
-    startRun.bindings = ();
-    currentRuns.push_back(startRun)
-    epsilon_closure(startRun, currentRuns);
+    startRun.bindings.clear();
+    currentRuns.push_back(startRun);
 }
