@@ -253,6 +253,8 @@ Simulation::Simulation(const NFA &nfa)
     }
 
 void Simulation::consume_epsilons(Run &run) {
+    std::cout << "consume EPS from state " << run.state << "\n";
+
     int id = run.state;
     while (true) {
         const State &state = nfa.states[id];
@@ -270,6 +272,8 @@ Run Simulation::fork_run(Run &run) {
 
     int id = run.state;
     const State &state = nfa.states[id];
+
+    std::cout << "fork at state " << run.state << " -> " << state.out1.to << " and " << state.out2.to << "\n";
 
     run.state = state.out1.to;
     forkedRun.state = state.out2.to;
@@ -294,6 +298,8 @@ Run Simulation::fork_run(Run &run) {
 }
 
 void Simulation::epsilon_closure(std::vector<Run> &currentRuns) {
+    std::cout << "epsilon_closure start (" << currentRuns.size() << " runs)\n";
+
     std::queue<Run> q;
 
     for (Run run : currentRuns) {
@@ -317,16 +323,32 @@ void Simulation::epsilon_closure(std::vector<Run> &currentRuns) {
     }
 }
 
+void Simulation::print_run(const Run &run) {
+    std::cout << "Run(state=" << run.state << ", bindings=[";
+    for (const auto &m : run.bindings) {
+        std::cout << m.var << ":" << m.row->id << " ";
+    }
+    std::cout << "])\n";
+}
+
 bool Simulation::run(const std::vector<Row> &rows) {
     for (const Row &row : rows) {
+        std::cout << "ROW " << row.id << " (" << row.primary_type << ")\n";
+
         std::vector<Run> nextRuns;
 
         for (Run run : currentRuns) {
+            print_run(run);
+
             int id = run.state;
             const State &state = nfa.states[id];
 
             if (state.out1.type == TransitionType::VAR) {
+                std::cout << "try VAR '" << state.out1.var << "' -> " << state.out1.to << "\n";
+
                 if (state.out1.guard(run.bindings, row)) {
+                    std::cout << "guard accepted\n";
+
                     run.state = state.out1.to;
 
                     matchedVar matchedVar;
@@ -335,7 +357,9 @@ bool Simulation::run(const std::vector<Row> &rows) {
                     run.bindings.push_back(matchedVar);
 
                     nextRuns.push_back(run); 
-                } 
+                } else {
+                    std::cout << "guard accepted\n";
+                }
             } 
 
             epsilon_closure(nextRuns);
@@ -343,6 +367,7 @@ bool Simulation::run(const std::vector<Row> &rows) {
         }
     }
 
+    std::cout << "\n=== FINAL RUNS ===\n";
     bool match = false;
     for (const Run &run : currentRuns) {
         if (run.state == nfa.accept) {

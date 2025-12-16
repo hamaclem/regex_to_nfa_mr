@@ -6,7 +6,7 @@
 #include <string>
 
 std::vector<Row> rows = {
-    {1, "1/2/2018 5:30", "ASSAULT", 41.69, -87.66},
+    // {1, "1/2/2018 5:30", "ASSAULT", 41.69, -87.66},
     {2, "1/2/2018 5:35", "ROBBERY", 41.10, -87.50},
     {3, "1/2/2018 5:40", "BURGLARY", 41.34, -87.57},
     {4, "1/2/2018 5:45", "ROBBERY", 41.13, -87.55},
@@ -30,7 +30,33 @@ GuardFn guard_M = [] (const std::vector<matchedVar> &buffer, const Row &row) {
     return row.primary_type == "MOTOR VEHICLE THEFT";
 };
 
+GuardFn guard_for_var(char var) {
+    switch (var) {
+        case 'R': return guard_R;
+        case 'B': return guard_B;
+        case 'M': return guard_M;
+        case 'Z': return wildcard;
+        default:  return wildcard;
+    }
+}
+
 int main() {
+    std::string pattern = "RZ*BZ*M";
+
+    Lexer lexer(pattern);
+    Parser parser(lexer);
+    Node* ast = parser.parse_pattern();
+    NFA nfa = build_from_AST(ast);
+    delete(ast);
+
+     for (State &state : nfa.states) {
+        if (state.out1.type == TransitionType::VAR)
+            state.out1.guard = guard_for_var(state.out1.var);
+    }
+
+    Simulation sim(nfa);
+    bool matched = sim.run(rows);
+    std::cout << (matched ? "MATCH FOUND\n" : "NO MATCH\n");
 
     return 0;
 }
