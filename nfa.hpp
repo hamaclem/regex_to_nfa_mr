@@ -85,8 +85,6 @@ struct Simulation {
 
     Simulation(const NFA &nfa);
 
-    void consume_epsilons(Run &run);
-    Run fork_run(Run &run);
     void epsilon_closure(std::vector<Run> &currentRuns);
     void print_run(const Run &run);
     bool run(const std::vector<Row> &rows);

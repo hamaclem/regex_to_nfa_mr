@@ -49,14 +49,12 @@ int main() {
     NFA nfa = build_from_AST(ast);
     delete(ast);
 
-     for (State &state : nfa.states) {
+    for (State &state : nfa.states) {
         if (state.out1.type == TransitionType::VAR)
             state.out1.guard = guard_for_var(state.out1.var);
     }
 
     Simulation sim(nfa);
-    bool matched = sim.run(rows);
-    std::cout << (matched ? "MATCH FOUND\n" : "NO MATCH\n");
-
+    sim.run(rows);
     return 0;
 }

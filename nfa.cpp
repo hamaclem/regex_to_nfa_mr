@@ -252,88 +252,82 @@ Simulation::Simulation(const NFA &nfa)
         epsilon_closure(currentRuns);
     }
 
-void Simulation::consume_epsilons(Run &run) {
-    std::cout << "consume EPS from state " << run.state << "\n";
+bool run_exists(const Run &run, const std::vector<Run> &currentRuns) {
+    for (const Run &r : currentRuns) {
+        if (r.state != run.state) {
+            continue;
+        }
+        if (r.bindings.size() != run.bindings.size()) {
+            continue;
+        }
 
-    int id = run.state;
-    while (true) {
-        const State &state = nfa.states[id];
-        if (state.out1.type == TransitionType::EPSILON && state.out2.type == TransitionType::NONE) {
-            id = state.out1.to;
-        } else {
-            break;
+        bool exists = true;
+        for (size_t i = 0; i < run.bindings.size(); ++i) {
+            if (r.bindings[i].var != run.bindings[i].var || r.bindings[i].row->id != run.bindings[i].row->id) {
+                exists = false;
+                break;
+            }
+        }
+        if (exists) {
+            return true; 
         }
     }
-    run.state = id;
-}
-
-Run Simulation::fork_run(Run &run) {
-    Run forkedRun = run;
-
-    int id = run.state;
-    const State &state = nfa.states[id];
-
-    std::cout << "fork at state " << run.state << " -> " << state.out1.to << " and " << state.out2.to << "\n";
-
-    run.state = state.out1.to;
-    forkedRun.state = state.out2.to;
-    
-    consume_epsilons(run);
-    consume_epsilons(forkedRun);
-    
-    bool exists = false;
-    for (Run &r : currentRuns) {
-        if (r.state == forkedRun.state) {
-            // TODO: ADD CHECK FOR BUFFER
-
-            exists = true; 
-            break; 
-        }
-    }
-    if (!exists) {
-        currentRuns.push_back(forkedRun);
-    }
-
-    return forkedRun;
+    return false;
 }
 
 void Simulation::epsilon_closure(std::vector<Run> &currentRuns) {
-    std::cout << "epsilon_closure start (" << currentRuns.size() << " runs)\n";
-
     std::queue<Run> q;
 
     for (Run run : currentRuns) {
         q.push(run);
     }
     
+    currentRuns.clear();
+
     while (!q.empty()) {
         Run run = q.front();
-        
+        q.pop();
+
         int id = run.state;
         const State &state = nfa.states[id];
 
-        if (state.out1.type == TransitionType::VAR) {
-            q.pop();
-        } else if (state.out1.type == TransitionType::EPSILON && state.out2.type == TransitionType::NONE) {
-            consume_epsilons(run);
-        } if (state.out1.type == TransitionType::EPSILON && state.out2.type == TransitionType::EPSILON) {
-            Run forkedRun = fork_run(run); 
-            q.push(forkedRun);
+        if (run.state == nfa.accept) {
+            currentRuns.push_back(run);
+        } if (state.out1.type == TransitionType::VAR) {
+            if (!run_exists(run, currentRuns)) {
+                currentRuns.push_back(run);
+            }
+        } if (state.out1.type == TransitionType::EPSILON) {  
+            Run r = run;
+            r.state = state.out1.to;
+            q.push(r);
+        } if (state.out2.type == TransitionType::EPSILON) {
+            Run r = run;
+            r.state = state.out2.to;
+            q.push(r);
         }
     }
 }
 
 void Simulation::print_run(const Run &run) {
-    std::cout << "Run(state=" << run.state << ", bindings=[";
-    for (const auto &m : run.bindings) {
-        std::cout << m.var << ":" << m.row->id << " ";
+    if (run.bindings.size()  == 0) {
+        std::cout << "Run: state=" << run.state << ", bindings=[]\n";
+    } else {
+        std::cout << "Run: state=" << run.state << ", bindings=[";
+
+        for (size_t i = 0; i < run.bindings.size() - 1; ++i) {
+            std::cout << run.bindings[i].var  << ":" << run.bindings[i].row->id << " ";
+        }
+
+        size_t last = run.bindings.size() - 1;
+        
+        std::cout << run.bindings[last].var << ":" << run.bindings[last].row->id << "]\n";
     }
-    std::cout << "])\n";
 }
 
 bool Simulation::run(const std::vector<Row> &rows) {
     for (const Row &row : rows) {
-        std::cout << "ROW " << row.id << " (" << row.primary_type << ")\n";
+        std::cout << "\nROW " << row.id << " (" << row.primary_type << ")\n";
 
         std::vector<Run> nextRuns;
 
@@ -343,11 +337,14 @@ bool Simulation::run(const std::vector<Row> &rows) {
             int id = run.state;
             const State &state = nfa.states[id];
 
-            if (state.out1.type == TransitionType::VAR) {
-                std::cout << "try VAR '" << state.out1.var << "' -> " << state.out1.to << "\n";
+            if (run.state == nfa.accept) {
+                nextRuns.push_back(run);  
+                continue;                 
+            }
 
+            if (state.out1.type == TransitionType::VAR) {
                 if (state.out1.guard(run.bindings, row)) {
-                    std::cout << "guard accepted\n";
+                    std::cout << state.out1.var << " -> " << state.out1.to << " accepted\n";
 
                     run.state = state.out1.to;
 
@@ -358,22 +355,22 @@ bool Simulation::run(const std::vector<Row> &rows) {
 
                     nextRuns.push_back(run); 
                 } else {
-                    std::cout << "guard accepted\n";
+                    std::cout << state.out1.var << " -> " << state.out1.to << " rejected\n";
                 }
             } 
-
-            epsilon_closure(nextRuns);
-            currentRuns = std::move(nextRuns);
         }
+        epsilon_closure(nextRuns);
+        currentRuns = std::move(nextRuns);
     }
 
-    std::cout << "\n=== FINAL RUNS ===\n";
+    std::cout << "\n=== RESULT ===\n";
     bool match = false;
     for (const Run &run : currentRuns) {
         if (run.state == nfa.accept) {
             for (const matchedVar &matchedVar : run.bindings) {
-                std::cout << matchedVar.var << " , Row ID " << matchedVar.row->id << "\n";
+                std::cout << matchedVar.var << " -> Row " << matchedVar.row->id << "\n";
             }
+            std::cout << "\n";
             match = true;
         }
     }
