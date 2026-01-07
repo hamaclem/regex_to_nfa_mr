@@ -1,6 +1,13 @@
 #include <iostream>
 #include <queue>
 #include "nfa.hpp"
+#include <string>
+#include <sstream>
+
+#define SHINY_RED "\033[1;91m"
+#define SHINY_GREEN "\033[1;92m"
+#define RESET_COLOR     "\033[0m"
+
 
 Transition::Transition()
     : type(TransitionType::NONE), to(-1), var(0), guard(GuardFn()) {}
@@ -361,17 +368,21 @@ bool Simulation::run(const std::vector<Row> &rows) {
         epsilon_closure(nextRuns);
         currentRuns = std::move(nextRuns);
     }
-
-    std::cout << "\n=== RESULT ===\n";
+    std::ostringstream oss;
     bool match = false;
     for (const Run &run : currentRuns) {
         if (run.state == nfa.accept) {
             for (const matchedVar &matchedVar : run.bindings) {
-                std::cout << matchedVar.var << " -> Row " << matchedVar.row->id << "\n";
+                oss << matchedVar.var << " -> Row " << matchedVar.row->id << "\n";
             }
             std::cout << "\n";
             match = true;
         }
+    }
+    if(oss.str().empty()) {
+        std::cout << "\n" << SHINY_RED << "=== EMPTY ===" << RESET_COLOR <<"\n\n";
+    } else {
+        std::cout << "\n" << SHINY_GREEN << "=============== RESULT ===============" << RESET_COLOR << "\n\n" << oss.str() << "\n";
     }
     return match;
 }

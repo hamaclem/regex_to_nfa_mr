@@ -3,3 +3,5 @@ nfa
 build/
 CMakeLists.txt
 .gitignore
+.cache
+.DS_Store

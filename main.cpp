@@ -8,10 +8,11 @@
 #include <cmath>
 #include <iomanip>
 #include <ctime>
+#include <sstream>
 
 
 std::vector<Row> rows = {
-    // {1, "1/2/2018 5:30", "ASSAULT", 41.69, -87.66},
+    {1, "1/2/2018 5:30", 0, "ASSAULT", 41.69, -87.66},
     {2, "1/2/2018 5:35", 0, "ROBBERY", 41.10, -87.50},
     {3, "1/2/2018 5:40", 0, "BURGLARY", 41.34, -87.57},
     {4, "1/2/2018 5:45", 0, "ROBBERY", 41.13, -87.55},
@@ -108,7 +109,12 @@ int main() {
             state.out1.guard = guard_for_var(state.out1.var);
     }
 
-    Simulation sim(nfa);
-    sim.run(rows);
+    while(!rows.empty()) {
+        Simulation sim(nfa);
+        sim.run(rows);
+        sim.reset();
+        rows.erase(rows.begin());
+    }
+  
     return 0;
 }
