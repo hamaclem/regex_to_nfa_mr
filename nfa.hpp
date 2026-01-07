@@ -5,10 +5,12 @@
 #include <vector>
 #include <functional>
 #include <set>
+#include <ctime>
 
 struct Row {
     int id;
-    std::string datetime;
+    std::string datetime_str;
+    time_t datetime;
     std::string primary_type;
     float lat;
     float lon;

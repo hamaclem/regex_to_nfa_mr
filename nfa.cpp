@@ -136,7 +136,7 @@ NFA NFA::build_concat_NFA(NFA nfa1, NFA nfa2) {
     for(auto state : nfa1.states) {
         int id = resultNFA.new_state();
         resultNFA.states[id] = state;
-        resultNFA.states[id].id = id; // eventually delete this line
+        resultNFA.states[id].id = id;
     }
 
     // at this point of code, id points to the last state of nfa1, which should be the first state of nfa2
@@ -147,7 +147,7 @@ NFA NFA::build_concat_NFA(NFA nfa1, NFA nfa2) {
         resultNFA.states[id] = state;
         if(resultNFA.states[id].out1.type != TransitionType::NONE) resultNFA.states[id].out1.to += offset - 1;
         if(resultNFA.states[id].out2.type != TransitionType::NONE) resultNFA.states[id].out2.to += offset - 1;
-        resultNFA.states[id].id = id; // eventually delete this line
+        resultNFA.states[id].id = id;
 
         id = resultNFA.new_state();     // this loop adds the new state at the end, because we use the last defined state from the previous loop
     }
@@ -320,7 +320,6 @@ void Simulation::print_run(const Run &run) {
         }
 
         size_t last = run.bindings.size() - 1;
-        
         std::cout << run.bindings[last].var << ":" << run.bindings[last].row->id << "]\n";
     }
 }
