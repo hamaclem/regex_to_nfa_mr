@@ -4,8 +4,8 @@
 #include <string>
 #include <sstream>
 
-#define SHINY_RED "\033[1;91m"
-#define SHINY_GREEN "\033[1;92m"
+#define SHINY_RED "\033[1;38;2;255;0;0m"
+#define SHINY_GREEN "\033[1;38;2;0;255;0m"
 #define RESET_COLOR     "\033[0m"
 
 

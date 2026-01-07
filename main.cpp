@@ -10,6 +10,9 @@
 #include <ctime>
 #include <sstream>
 
+#define SHINY_CYAN "\033[1;38;2;0;255;255m"
+#define RESET_COLOR      "\033[0m"
+
 
 std::vector<Row> rows = {
     {1, "1/2/2018 5:30", 0, "ASSAULT", 41.69, -87.66},
@@ -110,6 +113,7 @@ int main() {
     }
 
     while(!rows.empty()) {
+        std::cout << SHINY_CYAN << "Starting from ROW " << rows.begin()->id << RESET_COLOR << "\n";
         Simulation sim(nfa);
         sim.run(rows);
         sim.reset();
