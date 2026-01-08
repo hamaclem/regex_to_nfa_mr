@@ -13,6 +13,7 @@
 #define SHINY_CYAN "\033[1;38;2;0;255;255m"
 #define RESET_COLOR      "\033[0m"
 
+bool after_match_skip_to_next_row = true;
 
 std::vector<Row> rows = {
     {1, "1/2/2018 5:30", 0, "ASSAULT", 41.69, -87.66},
@@ -93,6 +94,26 @@ GuardFn guard_for_var(char var) {
     }
 }
 
+void find_matches(Simulation &sim, std::vector<Row> &rows, bool after_match_skip_to_next_row) {
+    sim.run(rows);
+    if (after_match_skip_to_next_row) {
+        rows.erase(rows.begin());
+    } else {
+        if (sim.accRuns.empty()) {
+            rows.erase(rows.begin());
+        } else {
+            size_t match_length = sim.accRuns.front().bindings.size();
+            for (const Run &run : sim.accRuns) {
+                if (run.bindings.size() < match_length) {
+                    match_length = run.bindings.size();
+                }
+            }
+            rows.erase(rows.begin(), rows.begin()+match_length);
+        }
+    } 
+    sim.reset();
+}
+     
 int main() {
     for (Row &row : rows) {
         auto date = parse_date(row.datetime_str);

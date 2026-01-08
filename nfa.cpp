@@ -344,7 +344,7 @@ bool Simulation::run(const std::vector<Row> &rows) {
             const State &state = nfa.states[id];
 
             if (run.state == nfa.accept) {
-                nextRuns.push_back(run);  
+                accRuns.push_back(run);  
                 continue;                 
             }
 
@@ -368,7 +368,24 @@ bool Simulation::run(const std::vector<Row> &rows) {
         epsilon_closure(nextRuns);
         currentRuns = std::move(nextRuns);
     }
+    
     std::ostringstream oss;
+    
+    bool match = !accRuns.empty();
+
+    for (const Run &accRun : accRuns) {
+        for (const matchedVar &matchedVar : accRun.bindings) {
+            oss << matchedVar.var << " -> Row " << matchedVar.row->id << "\n";
+        }
+        std::cout << "\n";
+    }
+    if (!match) {
+        std::cout << "\n" << SHINY_RED << "=== EMPTY ===" << RESET_COLOR <<"\n\n";
+    } else {
+        std::cout << "\n" << SHINY_GREEN << "=============== RESULT ===============" << RESET_COLOR << "\n\n" << oss.str() << "\n";
+    }
+    return match;
+   /*
     bool match = false;
     for (const Run &run : currentRuns) {
         if (run.state == nfa.accept) {
@@ -385,10 +402,12 @@ bool Simulation::run(const std::vector<Row> &rows) {
         std::cout << "\n" << SHINY_GREEN << "=============== RESULT ===============" << RESET_COLOR << "\n\n" << oss.str() << "\n";
     }
     return match;
+    */
 }
 
 void Simulation::reset() {
     currentRuns.clear();
+    accRuns.clear();
     Run startRun;
     startRun.state = nfa.start;
     startRun.bindings.clear();

@@ -84,6 +84,7 @@ struct Run {
 struct Simulation {
     const NFA &nfa;
     std::vector<Run> currentRuns;
+    std::vector<Run> accRuns;
 
     Simulation(const NFA &nfa);
 
