@@ -373,17 +373,19 @@ bool Simulation::run(const std::vector<Row> &rows) {
     
     bool match = !accRuns.empty();
 
-    for (const Run &accRun : accRuns) {
-        for (const matchedVar &matchedVar : accRun.bindings) {
-            oss << matchedVar.var << " -> Row " << matchedVar.row->id << "\n";
-        }
-        std::cout << "\n";
-    }
     if (!match) {
         std::cout << "\n" << SHINY_RED << "=== EMPTY ===" << RESET_COLOR <<"\n\n";
     } else {
-        std::cout << "\n" << SHINY_GREEN << "=============== RESULT ===============" << RESET_COLOR << "\n\n" << oss.str() << "\n";
+        std::cout << "\n" << SHINY_GREEN << "=============== RESULT ===============" << RESET_COLOR << "\n\n" << "\n";
     }
+
+    for (const Run &accRun : accRuns) {
+        for (const matchedVar &matchedVar : accRun.bindings) {
+            std::cout << matchedVar.var << " -> Row " << matchedVar.row->id << "\n";
+        }
+        std::cout << "\n\n";
+    }
+    
     return match;
    /*
     bool match = false;

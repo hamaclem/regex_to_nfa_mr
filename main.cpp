@@ -24,7 +24,10 @@ std::vector<Row> rows = {
     {6, "1/2/2018 5:55", 0, "BATTERY", 41.12, -87.51},
     {7, "1/2/2018 6:00", 0, "NARCOTICS", 41.17, -87.59},
     {8, "1/2/2018 6:05", 0, "MOTOR VEHICLE THEFT", 41.11, -87.53},
-    {9, "1/2/2018 6:10", 0, "OTHER OFFENCE", 41.18, -87.56}
+    {9, "1/2/2018 6:10", 0, "OTHER OFFENCE", 41.18, -87.56},
+    {10, "1/2/2018 6:05", 0, "MOTOR VEHICLE THEFT", 41.11, -87.53},
+    {11, "1/2/2018 6:10", 0, "OTHER OFFENCE", 41.18, -87.56}
+
 };
 
 std::time_t parse_date(std::string dateString) {
