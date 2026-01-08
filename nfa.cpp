@@ -5,7 +5,7 @@
 
 #define SHINY_RED "\033[1;38;2;255;0;0m"
 #define SHINY_GREEN "\033[1;38;2;0;255;0m"
-#define RESET_COLOR     "\033[0m"
+#define RESET_COLOR "\033[0m"
 
 
 Transition::Transition()
@@ -298,7 +298,7 @@ void Simulation::epsilon_closure(std::vector<Run> &currentRuns) {
         const State &state = nfa.states[id];
 
         if (run.state == nfa.accept) {
-            currentRuns.push_back(run);
+            accRuns.push_back(run);
         } if (state.out1.type == TransitionType::VAR) {
             if (!run_exists(run, currentRuns)) {
                 currentRuns.push_back(run);
@@ -344,7 +344,6 @@ void Simulation::print_results(bool match) {
         }
 }
 
-
 bool Simulation::run(const std::vector<Row> &rows) {
     for (const Row &row : rows) {
         std::cout << "\nROW " << row.id << " (" << row.primary_type << ")\n";
@@ -381,10 +380,34 @@ bool Simulation::run(const std::vector<Row> &rows) {
         }
         epsilon_closure(nextRuns);
         currentRuns = std::move(nextRuns);
+        if (currentRuns.empty()) {
+            break;
+        }
     }
     
     bool match = !accRuns.empty();
     return match;
+}
+
+void Simulation::find_matches(Simulation &sim, std::vector<Row> &rows, bool after_match_skip_to_next_row) {
+    bool match = sim.run(rows);
+    sim.print_results(match);
+    if (after_match_skip_to_next_row) {
+        rows.erase(rows.begin());
+    } else {
+        if (sim.accRuns.empty()) {
+            rows.erase(rows.begin());
+        } else {
+            size_t match_length = sim.accRuns.front().bindings.size();
+            for (const Run &run : sim.accRuns) {
+                if (run.bindings.size() < match_length) {
+                    match_length = run.bindings.size();
+                }
+            }
+            rows.erase(rows.begin(), rows.begin()+match_length);
+        }
+    } 
+    sim.reset();
 }
 
 void Simulation::reset() {

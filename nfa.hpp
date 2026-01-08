@@ -92,6 +92,7 @@ struct Simulation {
     void print_run(const Run &run);
     void print_results(bool match); 
     bool run(const std::vector<Row> &rows);
+    void find_matches(Simulation &sim, std::vector<Row> &rows, bool after_match_skip_to_next_row);
     void reset();
 };
 
