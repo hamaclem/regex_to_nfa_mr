@@ -139,7 +139,8 @@ int main() {
     while(!rows.empty()) {
         std::cout << SHINY_CYAN << "Starting from ROW " << rows.begin()->id << RESET_COLOR << "\n";
         Simulation sim(nfa);
-        sim.run(rows);
+        bool match = sim.run(rows);
+        sim.print_results(match);
         sim.reset();
         rows.erase(rows.begin());
     }

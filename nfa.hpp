@@ -90,6 +90,7 @@ struct Simulation {
 
     void epsilon_closure(std::vector<Run> &currentRuns);
     void print_run(const Run &run);
+    void print_results(bool match); 
     bool run(const std::vector<Row> &rows);
     void reset();
 };

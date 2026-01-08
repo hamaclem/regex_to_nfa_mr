@@ -330,6 +330,21 @@ void Simulation::print_run(const Run &run) {
     }
 }
 
+void Simulation::print_results(bool match) {
+    if (!match) {
+            std::cout << "\n" << SHINY_RED << "=== EMPTY ===" << RESET_COLOR <<"\n\n";
+        } else {
+            std::cout << "\n" << SHINY_GREEN << "=============== RESULT ===============" << RESET_COLOR << "\n\n";
+            for (const Run &accRun : accRuns) {
+                for (const matchedVar &matchedVar : accRun.bindings) {
+                    std::cout << matchedVar.var << " -> Row " << matchedVar.row->id << "\n";
+                }
+                std::cout << "\n";
+            }
+        }
+}
+
+
 bool Simulation::run(const std::vector<Row> &rows) {
     for (const Row &row : rows) {
         std::cout << "\nROW " << row.id << " (" << row.primary_type << ")\n";
@@ -369,17 +384,6 @@ bool Simulation::run(const std::vector<Row> &rows) {
     }
     
     bool match = !accRuns.empty();
-    if (!match) {
-        std::cout << "\n" << SHINY_RED << "=== EMPTY ===" << RESET_COLOR <<"\n\n";
-    } else {
-        std::cout << "\n" << SHINY_GREEN << "=============== RESULT ===============" << RESET_COLOR << "\n\n";
-        for (const Run &accRun : accRuns) {
-            for (const matchedVar &matchedVar : accRun.bindings) {
-                std::cout << matchedVar.var << " -> Row " << matchedVar.row->id << "\n";
-            }
-            std::cout << "\n";
-        }
-    }
     return match;
 }
 
